@@ -7,6 +7,7 @@ A practical guide to the utilization of common Message Passing Interface (MPI) r
 2. [ABI Compatibility Initiative](#abi-compatability)
 3. [A Note On Portability](#portability)
 4. [MPICH](#mpich)
+5. [Open MPI (HPC-X)](#openmpi)
 
 ## MPI Component Hierarchy <a name="component-heirarchy"></a>
 This section describes how the different elements of the MPI stack fit together.  The following is an example of the 
@@ -96,7 +97,7 @@ Libfabric was acquired using the CentOS 7.8 package manager:
 
 #### Build MPICH
 * Download and extract [MPICH source](https://www.mpich.org/downloads/)
-* On the machine used during this investigation, it was necessary to create the following symbolic link for the 
+* On the machine used during this exercise, it was necessary to create the following symbolic link for the 
 configure script to find the system's Libfabric:
 <pre><code>ln -s /usr/lib64/libpsm_infinipath.so.1.16 /usr/lib64/libpsm_infinipath.so</code></pre>
 * Configure and build MPICH:
@@ -129,3 +130,34 @@ When using UCX, select the Mellanox network adapter.  Available adapters can be 
 * UCX_TLS=<transport>
 
 Select the UCX transport.  Available transports are listed with "ucx_info -d".
+
+## Open MPI (HPC-X)
+
+[HPC-X](https://developer.nvidia.com/networking/hpc-x) is a pre-compiled version of Open MPI distributed by NVIDIA 
+(formerly Mellanox).  In addition to Open MPI, HPC-X contains several other packages such as those that enable 
+in-network computing.
+
+### Rebuilding Open MPI with Libfabric
+
+Difficulty was encountered running the standard UCX-equipped Open MPI contained in HPC-X on an OmniPath cluster.  For 
+the purpose of this exercise, the version of Open MPI distributed in HPC-X was rebuilt using Libfabric instead of UCX.  
+The was done with the following configure parameters:
+
+<pre><code>./configure --prefix=/path/to/destination --disable-ipv6 --with-slurm --with-pmi --with-ofi --with-psm --with-psm2=/path/to/usr/psm2 --with-verbs --without-usnic</code></pre>
+
+On the configuration used in this exercise, it was necesarry to build libnuma as a prerequisite to building the psm2 
+library.
+
+### Open MPI terminology differences and low level transport controls
+
+Open MPI uses different terminology for the MPI component stack described 
+[in the first section of this article.](#component-heirarchy)
+
+There is not a precise equivalence between the hierarchy of Intel MPI/MPICH, rather the structure can be more accurately 
+described in terms of a rough equivalence.  
+
+The PML (point-to-point layer) in Open MPI can be thought of as the low-level transport layer.  This can be controlled 
+with mpirun parameters, for example, adding the following flag selects the UCX PML:
+
+<pre><code>--mca pml ucx</code></pre>
+
